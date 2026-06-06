@@ -1,15 +1,15 @@
-"""
-notifier.py — Multi-channel notification dispatcher.
+﻿"""
+notifier.py â€” Multi-channel notification dispatcher.
 
 Sends alerts through:
-  1. Console   — always active
-  2. Email     — SMTP (Gmail / Outlook / custom), enable in config.py
-  3. Signal    — via signal-cli CLI tool, enable in config.py
+  1. Console   â€” always active
+  2. Email     â€” SMTP (Gmail / Outlook / custom), enable in config.py
+  3. Signal    â€” via signal-cli CLI tool, enable in config.py
 
 Throttling: at most one alert per 5 seconds for any given subject prefix,
-            EXCEPT priority="high" (2FA codes) — those always fire immediately.
+            EXCEPT priority="high" (2FA codes) â€” those always fire immediately.
 
-College cybersecurity assignment — run only on systems you own.
+College cybersecurity assignment â€” run only on systems you own.
 """
 
 import smtplib
@@ -38,7 +38,7 @@ def send_notification(subject: str, body: str, priority: str = "normal") -> None
 
     _last_sent[key] = now
 
-    # Console (synchronous — always)
+    # Console (synchronous â€” always)
     _console(subject, body, priority)
 
     # Email (background thread)
@@ -52,7 +52,7 @@ def send_notification(subject: str, body: str, priority: str = "normal") -> None
                          daemon=True).start()
 
 
-# ── Console ───────────────────────────────────────────────────────────────────
+# â”€â”€ Console â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _console(subject: str, body: str, priority: str) -> None:
     border = "!" * 60 if priority == "high" else "=" * 60
@@ -64,7 +64,7 @@ def _console(subject: str, body: str, priority: str) -> None:
     print(f"{border}\n")
 
 
-# ── Email ─────────────────────────────────────────────────────────────────────
+# â”€â”€ Email â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _email(subject: str, body: str, priority: str) -> None:
     try:
@@ -77,7 +77,7 @@ def _email(subject: str, body: str, priority: str) -> None:
             f"SentinelKey Alert\n"
             f"Priority  : {priority.upper()}\n"
             f"Timestamp : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-            f"{'─' * 40}\n\n"
+            f"{'â”€' * 40}\n\n"
             f"{body}\n"
         )
         msg.attach(MIMEText(full_body, "plain", "utf-8"))
@@ -98,7 +98,7 @@ def _email(subject: str, body: str, priority: str) -> None:
         print(f"[EMAIL] Failed: {exc}")
 
 
-# ── Signal ────────────────────────────────────────────────────────────────────
+# â”€â”€ Signal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _signal(subject: str, body: str) -> None:
     msg = f"[SentinelKey]\n{subject}\n\n{body[:400]}"
@@ -113,8 +113,9 @@ def _signal(subject: str, body: str) -> None:
         else:
             print(f"[SIGNAL] Error: {result.stderr[:150]}")
     except FileNotFoundError:
-        print("[SIGNAL] signal-cli not found — install from https://github.com/AsamK/signal-cli")
+        print("[SIGNAL] signal-cli not found â€” install from https://github.com/AsamK/signal-cli")
     except subprocess.TimeoutExpired:
         print("[SIGNAL] Timed out")
     except Exception as exc:
         print(f"[SIGNAL] Failed: {exc}")
+
