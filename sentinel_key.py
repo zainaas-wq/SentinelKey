@@ -1,5 +1,4 @@
-﻿# feature/window-tracker — Win32 active window detection
-"""
+﻿"""
 sentinel_key.py â€” PART 1: Global keystroke + mouse logger with window tracking.
 
 Captures EVERY keyboard and mouse event system-wide and logs which application
