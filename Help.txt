@@ -1,0 +1,451 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║              SENTINELKEY — HELP & DOCUMENTATION                      ║
+║        Keystroke & Password Capture — College Assignment             ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+This tool is for educational use on systems you own or have explicit
+written permission to test.  Unauthorised use violates computer fraud laws.
+
+══════════════════════════════════════════════════════════════════════════
+TABLE OF CONTENTS
+══════════════════════════════════════════════════════════════════════════
+  1.  Project Overview
+  2.  File Descriptions
+  3.  Installation
+  4.  How to Run
+  5.  Start & Stop Mechanism (Required Explanation)
+  6.  Part 1 — Keystroke & Mouse Logger
+  7.  Part 2 — Password Detection Engine
+  8.  Password Detection Scenarios (all five)
+  9.  Notification System (Email + Signal)
+ 10.  Extra Features (for grader)
+ 11.  Configuration Reference
+ 12.  Troubleshooting
+
+══════════════════════════════════════════════════════════════════════════
+1.  PROJECT OVERVIEW
+══════════════════════════════════════════════════════════════════════════
+
+SentinelKey is a two-part keystroke logging and credential-detection tool
+built for a college cybersecurity assignment.
+
+  PART 1   Captures every keyboard keystroke and every mouse event
+           (movements, clicks, scrolls) system-wide using the pynput
+           library and writes them to keylog_output.txt.
+           A real-time tkinter GUI shows the stream as it is captured.
+
+  PART 2   Sits on top of Part 1 and watches the same keystroke stream
+           for patterns that indicate a password is being entered.
+           Detected credentials are written to passwords_captured.txt
+           (a SEPARATE file — never mixed with Part 1 output).
+           Notifications are sent via email and/or Signal.
+
+══════════════════════════════════════════════════════════════════════════
+2.  FILE DESCRIPTIONS
+══════════════════════════════════════════════════════════════════════════
+
+  SOURCE FILES
+  ────────────
+  config.py            All configuration (output paths, SMTP, timings,
+                       start/stop mode, GUI toggle).
+
+  sentinel_key.py      PART 1 — global pynput listeners for keyboard and
+                       mouse.  Writes keylog_output.txt.  Optional tkinter
+                       GUI with real-time feed.
+
+  clipboard_monitor.py Background daemon thread; polls the clipboard every
+                       300 ms and logs changes to clipboard_log.txt.
+
+  password_sniffer.py  PART 2 — PasswordDetector class.  Receives key
+                       events from Part 1, applies five detection scenarios,
+                       writes passwords_captured.txt, triggers notifications.
+
+  notifier.py          Sends alerts through console (always), email (SMTP),
+                       and Signal (signal-cli).
+
+  main.py              Combined launcher.  Monkey-patches Part 1's callbacks
+                       so every event also reaches Part 2.
+
+  Help.txt             This file.
+  requirements.txt     Python package dependencies.
+
+  RUNTIME OUTPUT FILES (created automatically)
+  ────────────────────────────────────────────
+  keylog_output.txt       Part 1 — every keystroke + mouse event
+  passwords_captured.txt  Part 2 — detected credentials only (separate!)
+  clipboard_log.txt       Clipboard change history
+
+══════════════════════════════════════════════════════════════════════════
+3.  INSTALLATION
+══════════════════════════════════════════════════════════════════════════
+
+Requirements: Python 3.8 or later (tkinter is part of the standard install
+on Windows).
+
+Step 1 — Install Python packages:
+    pip install -r requirements.txt
+
+    Installs:
+      pynput>=1.7.6     — global keyboard and mouse hooks
+      pyperclip>=1.8.2  — clipboard access
+
+Step 2 — (Optional) enable email notifications:
+    See section 9 below.
+
+Step 3 — Run:
+    python main.py
+
+══════════════════════════════════════════════════════════════════════════
+4.  HOW TO RUN
+══════════════════════════════════════════════════════════════════════════
+
+  Run both parts together (recommended):
+      python main.py
+
+  Run Part 1 only (no password detection):
+      python sentinel_key.py
+
+  Run Part 2 only (no GUI, no Part 1 log):
+      python password_sniffer.py
+
+══════════════════════════════════════════════════════════════════════════
+5.  START & STOP MECHANISM
+══════════════════════════════════════════════════════════════════════════
+
+HOW LOGGING STARTS
+──────────────────
+
+  Mode A — Immediate start (default, START_ON_ESC = False in config.py):
+    Logging begins the instant `python main.py` is executed.
+    No user action is required.  This mode is best for real assessments
+    where no delay is needed before capturing begins.
+
+  Mode B — ESC-delayed start (START_ON_ESC = True in config.py):
+    The program launches but holds in a waiting state.  No keystrokes
+    are recorded yet.  When the user presses ESC, logging activates and
+    a "[SYSTEM] Logging started" entry is written to the log file.
+    This mode is useful for presentations and demonstrations where the
+    tester needs to arrange windows or explain the tool before capture
+    begins.
+
+  Which mode to use:
+    • Default (immediate) for real assessments.
+    • ESC-delayed for classroom demonstrations where you want to narrate
+      before the tool starts capturing.
+
+HOW LOGGING STOPS
+─────────────────
+
+  Method 1 — Press ESC (default STOP_KEY):
+    Works in both GUI mode and console mode.  The pynput listener catches
+    ESC, flushes all buffered events to disk, writes a "[SYSTEM] Logger
+    terminated cleanly" entry, and exits.  Clean shutdown, nothing lost.
+
+  Method 2 — Close the GUI window:
+    The WM_DELETE_WINDOW protocol fires a graceful shutdown that flushes
+    buffers and stops all listener threads before the window closes.
+
+  Method 3 — Ctrl+C in the terminal:
+    KeyboardInterrupt is caught in main.py.  Buffers are flushed, the
+    password sniffer is stopped, and a clean exit message is printed.
+
+  In all three methods:
+    • All buffered key/mouse events are flushed to keylog_output.txt.
+    • The passwords_captured.txt file is left intact (nothing is deleted).
+    • All daemon threads (clipboard monitor, pynput listeners) stop.
+
+══════════════════════════════════════════════════════════════════════════
+6.  PART 1 — KEYSTROKE & MOUSE LOGGER
+══════════════════════════════════════════════════════════════════════════
+
+WHAT IS CAPTURED
+────────────────
+  Keyboard
+    • Every printable character (letters, digits, punctuation, symbols)
+    • Special keys: [ENTER], [TAB], [BKSP], [SHIFT], [CTRL], [ALT],
+                    [ESC], [CAPS], arrow keys, F-keys, etc.
+
+  Mouse
+    • MOVE  — (x, y) coordinates (throttled: only logged when cursor
+              moves more than 50 pixels from the last logged position)
+    • CLICK — button name (left/right/middle), action (PRESS/RELEASE),
+              (x, y)
+    • SCROLL — (x, y) plus scroll delta dx/dy
+
+OUTPUT FORMAT (keylog_output.txt)
+──────────────────────────────────
+  SENTINELKEY — PART 1 LOG
+  Started : 2026-06-06 20:00:00
+  ══════════════════════════════════════════════════════════════════════
+  [2026-06-06 20:00:01.234] KEY: hello
+  [2026-06-06 20:00:01.500] KEY: [ENTER]
+  [2026-06-06 20:00:02.100] MOUSE: CLICK left PRESS (540, 380)
+  [2026-06-06 20:00:05.000] [SYSTEM] Logging stopped by user (ESC)
+
+GUI (extra points)
+──────────────────
+  When tkinter is available, a dark-themed window opens automatically:
+    • Live scrolling feed of all events (yellow = special keys,
+      blue = mouse events, green = system messages, white = chars)
+    • Pause / Resume button — halts recording without stopping listeners
+    • Clear button — clears the on-screen display (log file unaffected)
+    • Open Log button — opens keylog_output.txt in the default editor
+    • Stop button — graceful shutdown
+    • Status indicator: ● RUNNING (green) / ● PAUSED (yellow) /
+                        ● STOPPED (red) / ● WAITING (yellow, ESC mode)
+
+══════════════════════════════════════════════════════════════════════════
+7.  PART 2 — PASSWORD DETECTION ENGINE
+══════════════════════════════════════════════════════════════════════════
+
+Part 2 runs simultaneously with Part 1.  Every key event is forwarded
+from Part 1 to the PasswordDetector via a monkey-patch in main.py so
+both parts share the same input stream without running duplicate listeners.
+
+On every Enter key press, the PasswordDetector analyses the characters
+typed since the previous Enter and applies the five scenarios below.
+
+Output goes to passwords_captured.txt ONLY — never to keylog_output.txt.
+
+══════════════════════════════════════════════════════════════════════════
+8.  PASSWORD DETECTION SCENARIOS
+══════════════════════════════════════════════════════════════════════════
+
+SCENARIO 1 — Mouse + Type + Enter  (extra points)
+──────────────────────────────────────────────────
+  The user clicks a password field with the mouse, types the password,
+  then presses Enter.
+
+  How detected:
+    The mouse listener records every click as a MOUSE:CLICK event in the
+    rolling event buffer.  When Enter is pressed, the detector searches
+    the buffer for any click that occurred within the last 5 seconds.
+    If found, +20 % confidence is added with reason "Mouse-click before
+    typing (Sc1)".
+
+  Typical flow:
+    [MOUSE] left PRESS → typing → [ENTER]
+
+SCENARIO 2 — Tab + Type + Enter  (required)
+─────────────────────────────────────────────
+  The user types a username, presses Tab to navigate to the password
+  field, types the password, then presses Enter.
+
+  How detected:
+    When Tab is pressed, the detector records the timestamp (last_tab_t)
+    and a snapshot of text typed so far (text_before_tab).  When Enter
+    fires, if last_tab_t is within TAB_PASSWORD_DELAY seconds (default
+    2.0 s), the text since the Tab is flagged as a likely password.
+    Confidence: +40 %.
+
+  Typical flow:
+    type username → [TAB] → type password → [ENTER]
+
+SCENARIO 3 — Ctrl+C / Ctrl+V + Enter  (extra points)
+───────────────────────────────────────────────────────
+  The user copies a password from another application (Ctrl+C) and
+  pastes it (Ctrl+V) then presses Enter.
+
+  How detected:
+    ClipboardMonitor logs every clipboard change.  When Ctrl+C is detected
+    in the key stream, a log entry is written noting a copy event.
+    When Ctrl+V is detected and the clipboard changed within the last 5
+    seconds, the pasted content is logged.  When Enter fires, if clipboard
+    content changed within ENTER_PASSWORD_WINDOW seconds (default 3.0 s)
+    and the typed text matches the clipboard content, confidence is +50 %.
+    If clipboard changed but text doesn't match exactly, +25 %.
+
+  Typical flow:
+    Ctrl+C in another window → Ctrl+V → [ENTER]
+
+SCENARIO 4 — Two-Factor Authentication Code  (extra points)
+────────────────────────────────────────────────────────────
+  The user receives a 2FA / OTP code and types it followed by Enter.
+
+  How detected:
+    When Enter is pressed and the current line consists entirely of digits
+    with length 4–8, it is treated as a 2FA code.  This fires a HIGH
+    PRIORITY notification immediately (codes expire in ~5 minutes).
+
+  Action:
+    A special block is written to passwords_captured.txt labelled
+    "[2FA CODE DETECTED — HIGH PRIORITY]" and send_notification() is
+    called with priority="high", bypassing the 5-second throttle.
+
+  Typical flow:
+    type 123456 → [ENTER]
+
+SCENARIO 5 — Complex String Heuristic  (extra points)
+────────────────────────────────────────────────────────
+  The user types a string that looks like a password by its character
+  composition, even if no Tab or mouse-click was detected.
+
+  How detected:
+    On Enter, the typed text is analysed for:
+      • Uppercase letters present
+      • Lowercase letters present
+      • Digits present
+      • Special / punctuation characters present
+    The count of distinct character classes is compared to thresholds:
+      ≥ 3 classes AND length ≥ 8  →  +30 % confidence
+      ≥ 2 classes AND length ≥ 6  →  +15 % confidence
+
+  Confidence scoring summary (all scenarios combined):
+    Tab flow               +40 %
+    Mouse click before     +20 %
+    Complex string (3cls)  +30 %
+    Clipboard paste match  +50 %
+    Clipboard changed      +25 %
+    2FA pattern            +35 % (handled separately, HIGH priority)
+    Minimum to save        ≥ 30 %
+
+══════════════════════════════════════════════════════════════════════════
+9.  NOTIFICATION SYSTEM  (extra points)
+══════════════════════════════════════════════════════════════════════════
+
+CONSOLE (always active)
+  Every detected password or 2FA code is printed to the terminal with
+  a bordered alert block showing subject, priority, and body.
+
+EMAIL (optional — requires configuration)
+  1. Enable two-factor authentication on your Gmail account.
+  2. Generate a Gmail App Password at:
+       https://myaccount.google.com/apppasswords
+     (Select "Mail" + device → copy the 16-character password)
+  3. Edit config.py:
+       EMAIL_ENABLED   = True
+       SENDER_EMAIL    = "your@gmail.com"
+       SENDER_PASSWORD = "xxxx xxxx xxxx xxxx"   # the App Password
+       RECIPIENT_EMAIL = "where_alerts_go@example.com"
+  4. Run the tool — email alerts fire when a password is captured.
+  Subject format: [SentinelKey | NORMAL] Password captured (75%)
+  2FA emails use priority NORMAL → HIGH and bypass the 5 s throttle.
+
+SIGNAL (optional — requires signal-cli)
+  1. Install signal-cli from: https://github.com/AsamK/signal-cli
+  2. Register your number: signal-cli -u +YOURNUMBER register
+  3. Edit config.py:
+       SIGNAL_ENABLED = True
+       SIGNAL_PHONE   = "+1234567890"
+  Alerts are sent as plain text messages to RECIPIENT_EMAIL (number).
+
+THROTTLING
+  To avoid notification floods, at most one alert per 5 seconds is sent
+  for each unique subject prefix.  2FA alerts (priority="high") bypass
+  this limit and always fire immediately because codes expire quickly.
+
+══════════════════════════════════════════════════════════════════════════
+10.  EXTRA FEATURES (for grader)
+══════════════════════════════════════════════════════════════════════════
+
+  ★ GUI Dashboard
+      Dark-themed tkinter window with real-time keystroke feed, colour-
+      coded by event type, Pause/Resume/Stop controls, status indicator.
+
+  ★ Scenario 1: Mouse + Type + Enter
+      Mouse-click events from pynput are stored in the rolling event
+      buffer and correlated with Enter presses.
+
+  ★ Scenario 3: Ctrl+C / Ctrl+V clipboard paste
+      Clipboard daemon thread detects copies; Ctrl+V in key stream
+      matched against clipboard content; correlated with Enter.
+
+  ★ Scenario 4: 2FA code detection with HIGH priority notification
+      Numeric-only 4–8 digit sequences flagged immediately; alert
+      bypasses throttle; note that code expires in ~5 minutes.
+
+  ★ Scenario 5: Complex-string heuristic
+      Character-class analysis (upper/lower/digit/special) gives a
+      password probability score independent of flow context.
+
+  ★ Confidence scoring (0–100 %)
+      Every captured credential entry carries a percentage score and
+      a reasons list explaining which signals triggered the capture.
+
+  ★ Clipboard monitoring
+      ClipboardMonitor runs as a daemon thread polling every 300 ms;
+      all clipboard changes are logged to clipboard_log.txt.
+
+  ★ Separate output files (required)
+      Part 1 → keylog_output.txt
+      Part 2 → passwords_captured.txt
+      Clipboard → clipboard_log.txt
+
+  ★ Multi-channel notifications (Email + Signal + Console)
+      notifier.py dispatches alerts through all enabled channels
+      concurrently using background threads.
+
+  ★ Throttled alerts with priority override
+      5-second deduplication window; "high" priority bypasses it.
+
+  ★ Clean start/stop
+      Two start modes (immediate / ESC-delayed).  Three stop methods
+      (ESC key, GUI close, Ctrl+C).  All paths flush buffers cleanly.
+
+  ★ Monkey-patching architecture
+      main.py patches sentinel_key.on_key_event_hook and
+      on_mouse_event_hook so Part 1 and Part 2 share one listener
+      with no duplicate OS hooks.
+
+══════════════════════════════════════════════════════════════════════════
+11.  CONFIGURATION REFERENCE
+══════════════════════════════════════════════════════════════════════════
+
+  config.py variable          Default     Purpose
+  ──────────────────────────────────────────────────────────────────────
+  START_ON_ESC                False       True = wait for ESC to begin
+  STOP_KEY                    "esc"       Key that stops the logger
+  KEYLOG_FILE                 keylog...   Part 1 output file
+  PASSWORDS_FILE              passwords.. Part 2 output file
+  CLIPBOARD_FILE              clipboard.. Clipboard history file
+  TAB_PASSWORD_DELAY          2.0 s       Tab→Enter window for Sc2
+  ENTER_PASSWORD_WINDOW       3.0 s       Clipboard→Enter window for Sc3
+  EMAIL_ENABLED               False       Enable SMTP email alerts
+  SMTP_SERVER                 smtp.gm..   SMTP hostname
+  SMTP_PORT                   587         587=TLS  465=SSL
+  SMTP_USE_TLS                True        Use STARTTLS
+  SENDER_EMAIL                —           Sender Gmail address
+  SENDER_PASSWORD             —           Gmail App Password
+  RECIPIENT_EMAIL             —           Alert destination address
+  SIGNAL_ENABLED              False       Enable Signal alerts
+  SIGNAL_PHONE                —           Your Signal phone number
+  USE_GUI                     True        Show tkinter window
+
+══════════════════════════════════════════════════════════════════════════
+12.  TROUBLESHOOTING
+══════════════════════════════════════════════════════════════════════════
+
+  Problem  ModuleNotFoundError: No module named 'pynput'
+  Fix      pip install -r requirements.txt
+
+  Problem  Clipboard not captured
+  Fix      pip install pyperclip
+           On Linux you may also need: sudo apt install xclip
+
+  Problem  GUI does not appear
+  Fix      Ensure tkinter is installed.  On Linux: sudo apt install python3-tk
+           The tool automatically falls back to console mode if tkinter is
+           missing — logging still works fully.
+
+  Problem  Email not sending
+  Fix      • Use a Gmail App Password, not your regular account password.
+           • Enable 2-step verification on the Gmail account first.
+           • Check SMTP_SERVER / SMTP_PORT match your provider.
+
+  Problem  Signal not sending
+  Fix      Install signal-cli from https://github.com/AsamK/signal-cli
+           and register your number before enabling SIGNAL_ENABLED.
+
+  Problem  No keys captured (Windows)
+  Fix      Run the terminal as Administrator (some environments restrict
+           global input hooks).
+
+  Problem  No keys captured (Linux / macOS)
+  Fix      Run with sudo:  sudo python main.py
+           On macOS, grant Accessibility permission in System Preferences
+           → Privacy & Security → Input Monitoring.
+
+══════════════════════════════════════════════════════════════════════════
+  College Cybersecurity Assignment — for educational use only.
+  Use only on systems you own or have explicit written permission to test.
+══════════════════════════════════════════════════════════════════════════

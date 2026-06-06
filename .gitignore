@@ -1,0 +1,22 @@
+# Runtime output — never commit captured data
+keylog_output.txt
+passwords_captured.txt
+clipboard_log.txt
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Test helpers
+test_run.py
+
+# OS
+.DS_Store
+Thumbs.db
